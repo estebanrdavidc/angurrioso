@@ -1,7 +1,10 @@
 #include "Juego.h"
 #include <iostream>
-#include <cstdlib>
-#include <ctime>
+#include <fstream>
+#include <cstdlib>  // Para std::srand y std::rand
+#include <ctime>    // Para std::time
+
+// Implementación de la clase Jugador
 
 Jugador::Jugador() : puntosTotales(0), puntosRonda(0) {}
 
@@ -21,13 +24,24 @@ void Jugador::resetearPuntosTotales() {
     puntosTotales = 0;
 }
 
+void Jugador::cargarEstado(std::istream& input) {
+    input >> puntosTotales >> puntosRonda;
+}
+
+void Jugador::guardarEstado(std::ostream& output) const {
+    output << puntosTotales << " " << puntosRonda << std::endl;
+}
+
+// Implementación de la clase Juego
+
 Juego::Juego() : ronda(0) {
-    std::srand(std::time(0));
+    std::srand(static_cast<unsigned int>(std::time(0)));  // Corrección aquí
 }
 
 void Juego::jugar() {
     while (jugador1.obtenerPuntosTotales() < 30 && jugador2.obtenerPuntosTotales() < 30) {
         jugarRonda();
+        continuarOguardar();
         ronda++;
     }
     anunciarGanador();
@@ -73,3 +87,39 @@ void Juego::anunciarGanador() const {
     }
 }
 
+void Juego::guardarPartida(const std::string& nombreArchivo) const {
+    std::ofstream archivo(nombreArchivo);
+    if (archivo.is_open()) {
+        archivo << ronda << std::endl;
+        jugador1.guardarEstado(archivo);
+        jugador2.guardarEstado(archivo);
+        archivo.close();
+    } else {
+        std::cerr << "No se pudo abrir el archivo para guardar." << std::endl;
+    }
+}
+
+void Juego::cargarPartida(const std::string& nombreArchivo) {
+    std::ifstream archivo(nombreArchivo);
+    if (archivo.is_open()) {
+        archivo >> ronda;
+        jugador1.cargarEstado(archivo);
+        jugador2.cargarEstado(archivo);
+        archivo.close();
+    } else {
+        std::cerr << "No se pudo abrir el archivo para cargar." << std::endl;
+    }
+}
+
+void Juego::continuarOguardar() {
+    std::cout << "¿Desea continuar o guardar la partida? (1 para continuar, 2 para guardar): ";
+    int decision;
+    std::cin >> decision;
+    if (decision == 2) {
+        std::string nombreArchivo;
+        std::cout << "Ingrese el nombre del archivo para guardar: ";
+        std::cin >> nombreArchivo;
+        guardarPartida(nombreArchivo);
+        std::cout << "Partida guardada con éxito." << std::endl;
+    }
+}
